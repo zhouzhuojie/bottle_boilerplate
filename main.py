@@ -1,6 +1,6 @@
 import bottle
 
-from models import Todo
+from models import Todo, Comment
 
 app = bottle.Bottle()
 
@@ -23,6 +23,17 @@ def put_one(id):
 def post_one():
     todo = Todo.post_one(bottle.request.json)
     return todo.as_dict()
+
+@app.post('/todos/:id/comments')
+def post_one_comment(id):
+    c = Comment(id, bottle.request.json.get('message'))
+    c.save()
+    return c.as_dict()
+
+@app.get('/todos/:id/comments')
+def get_comments(id):
+    todo = Todo.get_one(id)
+    return { 'comments': [c.as_dict() for c in todo.comments] }
 
 if __name__ == '__main__':
     app.run(server='tornado', port=8080, reloader=True)

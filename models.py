@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, Sequence, String
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, Integer, Sequence, String, Text, ForeignKey
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 engine = create_engine('sqlite:///localdb/todo_dev.db', echo=True)
@@ -13,6 +13,7 @@ class Todo(Base):
 
     id = Column(Integer, Sequence('id_seq'), primary_key=True)
     name = Column(String(50))
+    comments = relationship('Comment', back_populates='todo')
 
     def __init__(self, name):
         self.name = name
@@ -51,3 +52,27 @@ class Todo(Base):
         session.commit()
         return todo
 
+
+class Comment(Base):
+    __tablename__ = 'comments'
+
+    id = Column(Integer, Sequence('id_seq'), primary_key=True)
+    message = Column(Text)
+    todo_id = Column(Integer, ForeignKey('todos.id'))
+    todo = relationship('Todo', back_populates='comments')
+
+    def __init__(self, todo_id, message):
+        self.todo_id = todo_id
+        self.message = message
+
+    def __repr__(self):
+        return "<Comment ('%d', '%d', '%s')>" % (self.id, self.todo_id, self.message)
+
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def save(self):
+        session = Session()
+        session.add(self)
+        session.commit()
+        return self
