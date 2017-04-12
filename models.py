@@ -15,14 +15,16 @@ class Todo(Base):
     name = Column(String(50))
     comments = relationship('Comment', back_populates='todo')
 
-    def __init__(self, name):
-        self.name = name
-
     def __repr__(self):
         return "<Todo ('%d', '%s')>" % (self.id, self.name)
 
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
+
+    def save(self):
+        session = Session()
+        session.add(self)
+        session.commit()
 
     @classmethod
     def get_one(cls, id):
@@ -38,18 +40,15 @@ class Todo(Base):
     def put_one(cls, id, delta_payload):
         todo = cls.get_one(id)
         if todo:
-            session = Session()
             todo.name = delta_payload.get('name')
-            session.add(todo)
-            session.commit()
+            todo.save()
         return todo
 
     @classmethod
     def post_one(cls, payload):
-        session = Session()
-        todo = Todo(payload.get("name"))
-        session.add(todo)
-        session.commit()
+        todo = Todo()
+        todo.name = payload.get('name')
+        todo.save()
         return todo
 
 
@@ -61,10 +60,6 @@ class Comment(Base):
     todo_id = Column(Integer, ForeignKey('todos.id'))
     todo = relationship('Todo', back_populates='comments')
 
-    def __init__(self, todo_id, message):
-        self.todo_id = todo_id
-        self.message = message
-
     def __repr__(self):
         return "<Comment ('%d', '%d', '%s')>" % (self.id, self.todo_id, self.message)
 
@@ -75,4 +70,3 @@ class Comment(Base):
         session = Session()
         session.add(self)
         session.commit()
-        return self

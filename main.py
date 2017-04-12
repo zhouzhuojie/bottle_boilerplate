@@ -26,7 +26,9 @@ def post_one():
 
 @app.post('/todos/:id/comments')
 def post_one_comment(id):
-    c = Comment(id, bottle.request.json.get('message'))
+    c = Comment()
+    c.todo_id = id
+    c.message = bottle.request.json.get('message')
     c.save()
     return c.as_dict()
 
